@@ -1,0 +1,54 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+<# var count = 7; #>
+using System;
+using System.Collections.Generic;
+using System.Collections;
+
+namespace ImmutableCollections
+{
+<# for (int i = 0; i < count; ++i) {#>
+    sealed class Vector<#= i #><T> : Vector<T>
+	{
+        public T<#for(int j=0; j < i+1; ++j){#>[]<#}#> items;
+	    
+        public override T this[int i]
+        {
+            get { return items<#for(int j=i;j>=0;--j){#>[(i >> <#=j*5#>) & MASK]<#}#>; }
+        }
+
+        public override Vector<T> Set(int i, T value)
+        {
+            var node0 = items.Copy();
+<# for (int j = 0; j < i; ++j) { #>
+            var node<#=j+1#> = Arrays.InternalCopy(ref node<#=j#>[(i >> <#=5*(count-j-1)#>) & MASK]);
+<# } #>
+            node<#=i#>[i & MASK] = value;
+            return new Vector<#=i#><T> { Count = Count, items = node0 };
+        }
+
+        public override Vector<T> Add(T value)
+        {
+            var node<#=i#> = items;
+<# for (int j = i; j > 0; --j) { #>
+            var node<#=j-1#> = node<#=j#>[node<#=j#>.Length - 1];
+<# } #>
+<# for (int j = 0; j <= i; ++j) { #>
+            if (node<#=j#>.Length < 32)
+                return new Vector<#=i#><T>
+				{
+				    Count = Count + 1,
+					items = <#for(int k=j;k<i;++k){#>node<#=i-k+j#>.InternalSet(node<#=i-k+j#>.Length-1, <#}#>node<#=j#>.InternalAppend(
+                        <#for(int h=0;h<j;++h){#>new T<#for(int k=h;k<j;++k){#>[]<#}#>{<#}#>value<#for(int k=0;k<j;++k){#>}<#}#>)<#for(int k=j;k<i;++k){#>)<#}#>
+
+                };
+<# } #>
+            throw new InvalidOperationException("Vector is full.");
+        }
+	}
+<# } #>
+}

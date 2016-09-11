@@ -1,0 +1,6 @@
+﻿
+## v1.0
+
+ * port Trie from Sasa as HashTrie
+ * port HashSet from ArrayMappedSet repo
+ * bench against Imms, MS's immutable collections, Jules' vectors/maps
